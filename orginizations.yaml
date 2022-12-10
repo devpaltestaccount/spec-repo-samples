@@ -1,0 +1,545 @@
+openapi: 3.0.0
+servers:
+  - url: ''
+info:
+  description: |- 
+  version: 2.0.0
+  title: ''
+paths:
+  '/organizations/{uuid}/invitations':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+        description: The organization's unique identifier
+    get:
+      summary: List Organization Invitations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationInvitation'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - collection
+                  - pagination
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA/invitations/BBBBBBBBBBBBBBBB'
+                        organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                        email: test@example.com
+                        status: accepted
+                        created_at: '2019-08-07T06:05:04.321123Z'
+                        updated_at: '2019-01-02T03:04:05.678123Z'
+                        last_sent_at: '2019-01-02T03:04:05.678123Z'
+                        user: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                    pagination:
+                      count: 1
+                      next_page: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA/invitations?count=1&page_token=sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi'
+                      previous_page: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA/invitations?count=1&page_token=VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H'
+                      next_page_token: sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi
+                      previous_page_token: VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-organizations-uuid-invitations
+      description: Returns a list of Organization Invitations that were sent to the organization's members.
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/PageToken'
+        - schema:
+            type: string
+            default: 'created_at:asc'
+          in: query
+          name: sort
+          description: Order results by the field name and direction specified (ascending or descending). Returns multiple sets of results in a comma-separated list.
+        - schema:
+            type: string
+            format: email
+            example: bob@example.com
+          in: query
+          name: email
+          description: Indicates if the results should be filtered by email address
+        - schema:
+            type: string
+            enum:
+              - pending
+              - accepted
+              - declined
+          in: query
+          name: status
+          description: 'Indicates if the results should be filtered by status  ("pending", "accepted", or "declined")'
+      tags:
+        - Organizations
+    post:
+      summary: Invite User to Organization
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/OrganizationInvitation'
+                required:
+                  - resource
+              examples:
+                Invitation:
+                  value:
+                    resource:
+                      created_at: '2020-01-01T20:30:00.000000Z'
+                      email: email@example.com
+                      last_sent_at: '2020-01-01T20:30:00.123456Z'
+                      organization: 'https://api.calendly.com/organizations/ABCDABCDABCDABCD'
+                      status: pending
+                      updated_at: '2020-01-01T20:30:00.000000Z'
+                      uri: 'https://api.calendly.com/organizations/ABCDABCDABCDABCD/invitations/DCBADCBADCBADCBA'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Email is Invalid:
+                  value:
+                    title: Invalid Email
+                    message: invalid_email@example is an invalid email format
+                Email is Blank:
+                  value:
+                    title: Invalid Argument
+                    message: The supplied parameters are invalid.
+                    details:
+                      - parameter: email
+                        message: must be filled
+                Email Exists in Organization:
+                  value:
+                    title: Already Organization Member
+                    message: email@example.com is already in the organization
+                Invitation Already Exists:
+                  value:
+                    title: Already Invited
+                    message: email@example.com has already been invited
+                Race Condition:
+                  value:
+                    title: Race Condition
+                    message: A race condition occurred when processing the request.  Please try the request again.
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - You already sent all the invitations you're allotted based upon the number of seats purchased with your account. Please purchase more seats to send more invitations.
+                      - You already sent all the invitations allotted to you with a trial account.
+                      - You do not have permission
+                      - You cannot perform this action for an organization with SCIM enabled.
+              examples:
+                Quantity Overflow:
+                  value:
+                    title: Permission Denied
+                    message: You already sent all the invitations you're allotted based upon the number of seats purchased with your account. Please purchase more seats to send more invitations.
+                Trial Quantity Overflow:
+                  value:
+                    title: Permission Denied
+                    message: You already sent all the invitations allotted to you with a trial account.
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: post-organizations-uuid-invitations
+      description: "\t\nInvites a user to an organization."
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: The email of the user being invited
+                  format: email
+                  example: alice@example.com
+              required:
+                - email
+            examples:
+              Example:
+                value:
+                  email: alice@example.com
+      tags:
+        - Organizations
+  '/organizations/{org_uuid}/invitations/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: org_uuid
+        in: path
+        required: true
+        description: The organization’s unique identifier
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        description: The organization invitation's unique identifier
+        required: true
+    delete:
+      summary: Revoke User's Organization Invitation
+      tags:
+        - Organizations
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Invitation Already Accepted:
+                  value:
+                    title: Invitation Already Accepted
+                    message: The invitation has already been accepted.
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - You cannot perform this action for an organization with SCIM enabled.
+                      - You do not have permission
+                      - You do not have permission to access this resource.
+              examples:
+                When org has SCIM enabled:
+                  value:
+                    title: Permission Denied
+                    message: You cannot perform this action for an organization with SCIM enabled.
+                When invitation does not belong to organization:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission
+                When user is not an admin/owner:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission to access this resource.
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: revoke-users-organization-invitation
+      description: 'Use this to revoke an Organization Invitation to an organization. Once revoked, the invitation link that was sent to the invitee is no longer valid.'
+      security:
+        - oauth2: []
+        - personal_access_token: []
+    get:
+      summary: Get Organization Invitation
+      operationId: get-organizations-org_uuid-invitations-uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/OrganizationInvitation'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA/invitations/BBBBBBBBBBBBBBBB'
+                      organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                      email: test@example.com
+                      status: accepted
+                      created_at: '2019-08-07T06:05:04.321123Z'
+                      updated_at: '2019-01-02T03:04:05.678123Z'
+                      last_sent_at: '2019-01-02T03:04:05.678123Z'
+                      user: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns an Organization Invitation that was sent to the organization's members.
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      tags:
+        - Organizations
+  '/organization_memberships/{uuid}':
+    get:
+      summary: Get Organization Membership
+      tags:
+        - Organizations
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/OrganizationMembership'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/organization_memberships/AAAAAAAAAAAAAAAA'
+                      role: admin
+                      user:
+                        uri: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                        name: John Doe
+                        slug: acmesales
+                        email: test@example.com
+                        scheduling_url: 'https://calendly.com/acmesales'
+                        timezone: America/New York
+                        avatar_url: 'https://01234567890.cloudfront.net/uploads/user/avatar/0123456/a1b2c3d4.png'
+                        created_at: '2019-01-02T03:04:05.678123Z'
+                        updated_at: '2019-08-07T06:05:04.321123Z'
+                      organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                      updated_at: '2019-08-07T06:05:04.321123Z'
+                      created_at: '2019-01-02T03:04:05.678123Z'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Caller not authorized to perform this action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                User belongs to another organization:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns information about a user's Organization Membership
+      operationId: get-organizations-uuid-memberships
+    delete:
+      summary: Remove User from Organization
+      tags:
+        - Organizations
+      operationId: delete-organizations-uuid-memberships
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Caller not authorized to perform this action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Caller's Role is User:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission to perform this action
+                Member is Owner:
+                  value:
+                    title: Permission Denied
+                    message: You can not change owner role
+                Member is the caller's account:
+                  value:
+                    title: Permission Denied
+                    message: You can not remove yourself from organization
+                Member belongs to another Organization:
+                  value:
+                    title: Permission Denied
+                    message: You cannot modify members from another organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: |-
+        Removes a user from an organization.
+
+        Notes:
+
+        * To remove users, the caller must have admin rights for the organization
+
+        * An organization owner can’t be removed
+      security:
+        - oauth2: []
+        - personal_access_token: []
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+        description: The organization membership's unique identifier
+  /organization_memberships:
+    get:
+      summary: List Organization Memberships
+      tags:
+        - Organizations
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+        - schema:
+            type: string
+            format: email
+            example: user@example.com
+          in: query
+          name: email
+          description: Indicates if the results should be filtered by email address
+        - schema:
+            type: string
+            format: uri
+            example: 'https://api.calendly.com/organizations/012345678901234567890'
+          in: query
+          name: organization
+          description: Indicates if the results should be filtered by organization
+        - schema:
+            type: string
+            example: 'https://api.calendly.com/users/012345678901234567890'
+            format: uri
+          in: query
+          name: user
+          description: Indicates if the results should be filtered by user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationMembership'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - collection
+                  - pagination
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/organization_memberships/AAAAAAAAAAAAAAAA'
+                        role: admin
+                        user:
+                          uri: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                          name: John Doe
+                          slug: acmesales
+                          email: test@example.com
+                          scheduling_url: 'https://calendly.com/acmesales'
+                          timezone: America/New York
+                          avatar_url: 'https://01234567890.cloudfront.net/uploads/user/avatar/0123456/a1b2c3d4.png'
+                          created_at: '2019-01-02T03:04:05.678123Z'
+                          updated_at: '2019-08-07T06:05:04.321123Z'
+                        organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                        updated_at: '2019-08-07T06:05:04.321123Z'
+                        created_at: '2019-01-02T03:04:05.678123Z'
+                    pagination:
+                      count: 1
+                      next_page: 'https://api.calendly.com/organization_memberships/AAAAAAAAAAAAAAAA?count=1&page_token=sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi'
+                      previous_page: 'https://api.calendly.com/organization_memberships/AAAAAAAAAAAAAAAA?count=1&page_token=VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H'
+                      next_page_token: sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi
+                      previous_page_token: VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Caller not authorized to perform this action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                User belongs to another organization:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: |-
+        Use this to list the Organization Memberships for all users belonging to an organization, use:
+
+        * `user` to look up a user's membership in an organization
+
+        * `organization` to look up all users that belong to the organization
+
+        This endpoint can also be used to retrieve your organization URI.
+      operationId: get-organization-memberships
+    parameters: []
