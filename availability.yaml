@@ -1,0 +1,308 @@
+openapi: 3.0.0
+servers:
+  - url: ''
+info:
+  description: |- 
+  version: 2.0.0
+  title: ''
+paths:  
+  /user_busy_times:
+    get:
+      summary: List User Busy Times
+      x-internal: false
+      description: |-
+        Returns an ascending list of user internal and external scheduled events within a specified date range.
+
+        Date range can be no greater than 1 week (7 days).
+
+        **NOTE:**
+        * This endpoint does not support traditional keyset pagination.
+        * External events will only be returned for calendars that have "Check for conflicts" configured.
+      tags:
+        - Availability
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - name: user
+          in: query
+          schema:
+            type: string
+            format: uri
+          description: The uri associated with the user
+          example: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+          required: true
+        - name: start_time
+          in: query
+          schema:
+            type: string
+          description: Start time of the requested availability range
+          example: '2020-01-02T20:00:00.000000Z'
+          required: true
+        - name: end_time
+          in: query
+          schema:
+            type: string
+          description: End time of the requested availability range
+          example: '2020-01-08T20:30:00.000000Z'
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service Response
+                properties:
+                  collection:
+                    type: array
+                    description: The set of internal and external scheduled calendar events matching the criteria
+                    items:
+                      $ref: '#/components/schemas/UserBusyTime'
+                required:
+                  - collection
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - type: calendly
+                        start_time: '2020-01-02T20:00:00.000000Z'
+                        end_time: '2020-01-02T20:30:00.000000Z'
+                        buffered_start_time: '2020-01-02T19:30:00.000000Z'
+                        buffered_end_time: '2020-01-02T21:00:00.000000Z'
+                        event:
+                          uri: 'https://api.calendly.com/scheduled_events/abc123'
+                      - type: calendly
+                        start_time: '2020-01-05T20:00:00.000000Z'
+                        end_time: '2020-01-05T20:30:00.000000Z'
+                        buffered_start_time: '2020-01-05T19:30:00.000000Z'
+                        buffered_end_time: '2020-01-05T21:00:00.000000Z'
+                        event:
+                          uri: 'https://api.calendly.com/scheduled_events/abc12345'
+                      - type: external
+                        start_time: '2020-01-07T20:00:00.000000Z'
+                        end_time: '2020-01-07T20:30:00.000000Z'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - This user is not in your organization
+              examples:
+                Caller and user are not in same organization:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '424':
+          description: Unable to access external calendar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Calendar Connection Failed:
+                  value:
+                    title: External Calendar Error
+                    message: There is a problem accessing your calendar.
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: getUserBusyTimes
+  /user_availability_schedules:
+    get:
+      summary: List User Availability Schedules
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AvailabilitySchedule'
+                required:
+                  - collection
+              examples:
+                example-1:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/user_availability_schedule/abc123'
+                        default: true
+                        name: Working Hours
+                        user: 'https://api.calendly.com/users/abc123'
+                        timezone: America/New_York
+                        rules:
+                          - type: wday
+                            intervals:
+                              - from: '08:30'
+                                to: '09:30'
+                            wday: sunday
+                            date: '2022-12-31'
+                      - uri: 'https://api.calendly.com/user_availability_schedule/abc456'
+                        default: false
+                        name: Evening Hours
+                        user: 'https://api.calendly.com/users/abc123'
+                        timezone: America/New_York
+                        rules:
+                          - type: wday
+                            intervals:
+                              - from: '08:30'
+                                to: '17:00'
+                            wday: monday
+                          - type: wday
+                            intervals:
+                              - from: '08:30'
+                                to: '17:00'
+                            wday: tuesday
+                          - type: wday
+                            intervals: []
+                            wday: wednesday
+                          - type: wday
+                            intervals:
+                              - from: '08:30'
+                                to: '17:00'
+                            wday: thursday
+                          - type: wday
+                            intervals:
+                              - from: '08:30'
+                                to: '17:00'
+                            wday: friday
+                          - type: wday
+                            intervals: []
+                            wday: saturday
+                          - type: date
+                            intervals:
+                              - from: '08:30'
+                                to: '09:30'
+                            date: '2028-12-31'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - This user is not in your organization
+              examples:
+                Caller is not in authenticated user's org:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: getUserAvailabilitySchedules
+      description: Returns the availability schedules of the given user.
+      parameters:
+        - $ref: '#/components/parameters/User'
+      x-internal: false
+      tags:
+        - Availability
+      security:
+        - oauth2: []
+        - personal_access_token: []
+    parameters: []
+  '/user_availability_schedules/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+        description: The UUID of the availability schedule.
+    get:
+      summary: Get User Availability Schedule
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/AvailabilitySchedule'
+                required:
+                  - resource
+              examples:
+                example-1:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/user_availability_schedule/abc123'
+                      default: true
+                      name: Working Hours
+                      user: 'https://api.calendly.com/users/abc123'
+                      timezone: America/New_York
+                      rules:
+                        - type: wday
+                          intervals:
+                            - from: '08:30'
+                              to: '09:30'
+                          wday: sunday
+                          date: '2022-12-31'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - This user is not in your organization
+              examples:
+                Caller is not in authenticated user's org:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          description: Internal Server Error
+      operationId: getUserAvailabilitySchedulesUuid
+      description: This will return the availability schedule of the given UUID.
+      x-internal: false
+      tags:
+        - Availability
+      security:
+        - oauth2: []
+        - personal_access_token: []
