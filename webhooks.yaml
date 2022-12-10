@@ -1,0 +1,374 @@
+openapi: 3.0.0
+servers:
+  - url: ''
+info:
+  description: |- 
+  version: 2.0.0
+  title: ''
+paths:  
+  /webhook_subscriptions:
+    post:
+      summary: Create Webhook Subscription
+      operationId: post-users-uuid-webhooks
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/WebhookSubscription'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/webhook_subscriptions/AAAAAAAAAAAAAAAA'
+                      callback_url: 'https://blah.foo/bar'
+                      created_at: '2019-08-24T14:15:22.123456Z'
+                      updated_at: '2019-08-24T14:15:22.123456Z'
+                      retry_started_at: '2019-08-24T14:15:22.123456Z'
+                      state: active
+                      events:
+                        - invitee.created
+                      scope: user
+                      organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                      user: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                      creator: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - Please upgrade your Calendly account to Professional
+                      - You do not have permission to access this resource.
+                      - You do not have permission
+              examples:
+                Caller's account is basic tier:
+                  value:
+                    title: Permission Denied
+                    message: Please upgrade your Calendly account to Professional
+                Caller's account is essentials tier:
+                  value:
+                    title: Permission Denied
+                    message: Please upgrade your Calendly account to Professional
+                Caller is not the user of the account:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission
+                Requested user does not belong to organization:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission to access this resource.
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '409':
+          description: Attempt to create a resource that already exists
+          content:
+            application/json:
+              examples:
+                URL Already Exists:
+                  value:
+                    title: Already Exists
+                    message: Hook with this url already exists
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      title:
+                        type: string
+                        enum:
+                          - Already Exists
+                      message:
+                        type: string
+                        enum:
+                          - Hook with this url already exists
+      description: |-
+        Create a Webhook Subscription for an Organization or User.
+
+        * The `organization` subscription scope triggers the webhook for all subscribed events within the organization.
+        * The `user` subscription scope only triggers the webhook for subscribed events that belong to the specific user.
+
+        | Event | Allowed Subscription Scopes |
+        | ----- | --------------------------- |
+        | <pre>invitee.created</pre> | `organization` `user` |
+        | <pre>invitee.canceled</pre> | `organization` `user` |
+        | <pre>routing_form_submission.created</pre> | `organization` <br /> <small>Create separate Webhook Subscriptions for events with different subscription scopes.</small> |
+      tags:
+        - Webhooks
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The URL where you want to receive POST requests for events you are subscribed to.
+                  format: uri
+                events:
+                  type: array
+                  description: List of user events to subscribe to.
+                  uniqueItems: true
+                  items:
+                    type: string
+                    enum:
+                      - invitee.canceled
+                      - invitee.created
+                      - routing_form_submission.created
+                organization:
+                  type: string
+                  description: The unique reference to the organization that the webhook will be tied to.
+                  format: uri
+                user:
+                  type: string
+                  description: The unique reference to the user that the webhook will be tied to.
+                  format: uri
+                scope:
+                  type: string
+                  enum:
+                    - organization
+                    - user
+                  description: Indicates if the webhook subscription scope will be "organization" or "user"
+                signing_key:
+                  type: string
+                  description: 'Optional secret key shared between your application and Calendly. See https://developer.calendly.com/api-docs/ZG9jOjM2MzE2MDM4-webhook-signatures for additional information.'
+              required:
+                - url
+                - events
+                - organization
+                - scope
+            examples:
+              User Scope Webhook:
+                value:
+                  url: 'https://blah.foo/bar'
+                  events:
+                    - invitee.created
+                    - invitee.canceled
+                  organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                  user: 'https://api.calendly.com/users/BBBBBBBBBBBBBBBB'
+                  scope: user
+                  signing_key: 5mEzn9C-I28UtwOjZJtFoob0sAAFZ95GbZkqj4y3i0I
+              Organization Scope Webhook:
+                value:
+                  url: 'https://blah.foo/bar'
+                  events:
+                    - invitee.created
+                    - invitee.canceled
+                    - routing_form_submission.created
+                  organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                  scope: organization
+                  signing_key: 5mEzn9C-I28UtwOjZJtFoob0sAAFZ95GbZkqj4y3i0I
+        description: ''
+    get:
+      summary: List Webhook Subscriptions
+      operationId: get-webhooks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookSubscription'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - collection
+                  - pagination
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/webhook_subscriptions/AAAAAAAAAAAAAAAA'
+                        callback_url: 'https://blah.foo/bar'
+                        created_at: '2019-08-24T14:15:22.123456Z'
+                        updated_at: '2019-08-24T14:15:22.123456Z'
+                        retry_started_at: '2019-08-24T14:15:22.123456Z'
+                        state: active
+                        events:
+                          - invitee.created
+                        scope: user
+                        organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                        user: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                        creator: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                    pagination:
+                      count: 1
+                      next_page: 'https://api.calendly.com/webhook_subscriptions?count=1&page_token=sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi'
+                      previous_page: 'https://api.calendly.com/webhook_subscriptions?count=1&page_token=VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H'
+                      next_page_token: sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi
+                      previous_page_token: VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - You do not have permission
+                      - You do not have permission to access this resource.
+                      - Unauthorized
+              examples:
+                Caller is not part of organization:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission
+                Caller is not an admin/owner of the organization:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission to access this resource.
+                Caller is not the user of the account:
+                  value:
+                    title: Permission Denied
+                    message: Unauthorized
+                Requested user account does not belong to organization:
+                  value:
+                    title: Permission Denied
+                    message: Unauthorized
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      description: Get a list of Webhook Subscriptions for a specified Organization or User.
+      tags:
+        - Webhooks
+      parameters:
+        - schema:
+            type: string
+            format: uri
+          in: query
+          name: organization
+          description: Indicates if the results should be filtered by organization
+          required: true
+        - schema:
+            type: string
+            format: uri
+          in: query
+          name: user
+          description: Indicates if the results should be filtered by user. This parameter is only required if the `scope` parameter is set to `user`.
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+        - schema:
+            type: string
+          in: query
+          name: sort
+          description: |-
+            Order results by the specified field and direction. Accepts comma-separated list of {field}:{direction} values.
+            Supported fields are: created_at.
+            Sort direction is specified as: asc, desc.
+        - schema:
+            type: string
+            enum:
+              - organization
+              - user
+          in: query
+          name: scope
+          description: Filter the list by organization or user
+          required: true
+  '/webhook_subscriptions/{webhook_uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: webhook_uuid
+        in: path
+        required: true
+    get:
+      summary: Get Webhook Subscription
+      tags:
+        - Webhooks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/WebhookSubscription'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/webhook_subscriptions/AAAAAAAAAAAAAAAA'
+                      callback_url: 'https://blah.foo/bar'
+                      created_at: '2019-08-24T14:15:22.123456Z'
+                      updated_at: '2019-08-24T14:15:22.123456Z'
+                      retry_started_at: '2019-08-24T14:15:22.123456Z'
+                      state: active
+                      events:
+                        - invitee.created
+                      scope: user
+                      organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                      user: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                      creator: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+      operationId: get-users-user_uuid-webhooks-webhook_uuid
+      description: Get a specified Webhook Subscription.
+      security:
+        - oauth2: []
+        - personal_access_token: []
+    delete:
+      summary: Delete Webhook Subscription
+      operationId: delete-users-user_uuid-webhooks-webhook_uuid
+      description: Delete a Webhook Subscription.
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      tags:
+        - Webhooks
+      security:
+        - oauth2: []
+        - personal_access_token: []
