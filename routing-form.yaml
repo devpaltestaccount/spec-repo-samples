@@ -1,0 +1,301 @@
+openapi: 3.0.0
+servers:
+  - url: ''
+info:
+  description: |- 
+  version: 2.0.0
+  title: ''
+paths:  
+  /routing_forms:
+    get:
+      summary: List Routing Forms
+      tags:
+        - Routing Forms
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RoutingForm'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - collection
+                  - pagination
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/routing_forms/AAAAAAAAAAAAAAAA'
+                        organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                        name: ACME Demo
+                        status: published
+                        questions:
+                          - uuid: 123e4567-e89b-12d3-a456-426614174000
+                            name: What is your industry?
+                            type: select
+                            required: true
+                            answer_choices:
+                              - IT & Software
+                              - Financial Services
+                              - Entertainment
+                          - uuid: 1213f8f1-57fd-45ee-88e9-1978d35b5cad
+                            name: Email
+                            type: email
+                            required: true
+                            answer_choices: null
+                        created_at: '2022-05-15T03:04:05.678Z'
+                        updated_at: '2022-05-15T06:05:04.321Z'
+                    pagination:
+                      count: 1
+                      next_page: 'https://api.calendly.com/routing_forms?count=1&page_token=d8T0LKQ1XsC2utmPlI7TFPpHX4SSfoGl'
+                      previous_page: 'https://api.calendly.com/routing_forms?count=1&page_token=VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H'
+                      next_page_token: d8T0LKQ1XsC2utmPlI7TFPpHX4SSfoGl
+                      previous_page_token: VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-routing_forms
+      description: Get a list of Routing Forms for a specified Organization.
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - schema:
+            type: string
+            example: 'https://api.calendly.com/organizations/EBHAAFHDCAEQTSEZ'
+            format: uri
+          in: query
+          name: organization
+          description: View organization routing forms associated with the organization's URI.
+          required: true
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/PageToken'
+        - schema:
+            type: string
+            example: 'created_at:asc'
+          in: query
+          name: sort
+          description: 'Order results by the specified field and direction. Accepts comma-separated list of {field}:{direction} values. Supported fields are: created_at. Sort direction is specified as: asc, desc.'
+  '/routing_forms/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+    get:
+      summary: Get Routing Form
+      tags:
+        - Routing Forms
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/RoutingForm'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/routing_forms/AAAAAAAAAAAAAAAA'
+                      organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                      name: ACME Demo
+                      status: published
+                      questions:
+                        - uuid: 123e4567-e89b-12d3-a456-426614174000
+                          name: What is your industry?
+                          type: select
+                          required: true
+                          answer_choices:
+                            - IT & Software
+                            - Financial Services
+                            - Entertainment
+                        - uuid: 1213f8f1-57fd-45ee-88e9-1978d35b5cad
+                          name: Email
+                          type: email
+                          required: true
+                          answer_choices: null
+                      created_at: '2022-05-15T03:04:05.678Z'
+                      updated_at: '2022-05-15T06:05:04.321Z'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-routing_forms-uuid
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      description: Get a specified Routing Form.
+  /routing_form_submissions:
+    get:
+      summary: List Routing Form Submissions
+      tags:
+        - Routing Forms
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RoutingFormSubmission'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - collection
+                  - pagination
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/routing_form_submissions/AAAAAAAAAAAAAAAA'
+                        routing_form: 'https://api.calendly.com/routing_forms/AAAAAAAAAAAAAAAA'
+                        questions_and_answers:
+                          - question_uuid: 123e4567-e89b-12d3-a456-426614174000
+                            question: What is your industry?
+                            answer: IT & Software
+                        tracking:
+                          utm_campaign: null
+                          utm_source: null
+                          utm_medium: null
+                          utm_content: null
+                          utm_term: null
+                          salesforce_uuid: null
+                        result:
+                          type: event_type
+                          value: 'https://api.calendly.com/event_types/GBGBDCAADAEDCRZ2'
+                        submitter: 'https://calendly.com/scheduled_events/AAAAAAAAAAAAAAAA/invitees/AAAAAAAAAAAAAAAA'
+                        submitter_type: Invitee
+                        created_at: '2022-05-15T03:04:05.678Z'
+                        updated_at: '2022-05-15T06:05:04.321Z'
+                    pagination:
+                      count: 1
+                      next_page: 'https://api.calendly.com/routing_form_submissions?count=1&page_token=d8T0LKQ1XsC2utmPlI7TFPpHX4SSfoGl'
+                      previous_page: 'https://api.calendly.com/routing_form_submissions?count=1&page_token=VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H'
+                      next_page_token: d8T0LKQ1XsC2utmPlI7TFPpHX4SSfoGl
+                      previous_page_token: VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-routing_form_submissions
+      description: Get a list of Routing Form Submissions for a specified Routing Form.
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - schema:
+            type: string
+            format: uri
+            example: 'https://api.calendly.com/routing_forms/AAAAAAAAAAAAAAAA'
+          in: query
+          name: form
+          required: true
+          description: View routing form submissions associated with the routing form's URI.
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/PageToken'
+        - schema:
+            type: string
+            example: 'created_at:asc'
+          in: query
+          name: sort
+          description: 'Order results by the specified field and direction. Accepts comma-separated list of {field}:{direction} values. Supported fields are: created_at. Sort direction is specified as: asc, desc.'
+      x-internal: false
+  '/routing_form_submissions/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+    get:
+      summary: Get Routing Form Submission
+      tags:
+        - Routing Forms
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/RoutingFormSubmission'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/routing_form_submissions/AAAAAAAAAAAAAAAA'
+                      routing_form: 'https://api.calendly.com/routing_forms/AAAAAAAAAAAAAAAA'
+                      questions_and_answers:
+                        - question_uuid: 123e4567-e89b-12d3-a456-426614174000
+                          question: What is your industry?
+                          answer: IT & Software
+                      tracking:
+                        utm_campaign: null
+                        utm_source: null
+                        utm_medium: null
+                        utm_content: null
+                        utm_term: null
+                        salesforce_uuid: null
+                      result:
+                        type: event_type
+                        value: 'https://api.calendly.com/event_types/GBGBDCAADAEDCRZ2'
+                      submitter: 'https://calendly.com/scheduled_events/AAAAAAAAAAAAAAAA/invitees/AAAAAAAAAAAAAAAA'
+                      submitter_type: Invitee
+                      created_at: '2022-05-15T03:04:05.678Z'
+                      updated_at: '2022-05-15T06:05:04.321Z'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-routing_form_submissions-uuid
+      description: Get a specified Routing Form Submission.
+      security:
+        - oauth2: []
+        - personal_access_token: []
