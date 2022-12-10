@@ -1,0 +1,195 @@
+openapi: 3.0.0
+servers:
+  - url: ''
+info:
+  description: |- 
+  version: 2.0.0
+  title: ''
+paths:
+  /event_types:
+    get:
+      summary: List User's Event Types
+      description: |-
+        Returns all Event Types associated with a specified User. Use:
+
+        * `organization` to look up all Event Types that belong to the organization
+
+        * `user` to look up a user's Event Types in an organization
+
+        Either `organization` or `user` are required query params when using this endpoint.
+      tags:
+        - Event Types
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - name: active
+          description: 'Return only active event types if true, only inactive if false, or all event types if this parameter is omitted.'
+          in: query
+          schema:
+            type: boolean
+        - name: organization
+          description: 'View available personal, team, and organization event types associated with the organization''s URI.'
+          in: query
+          schema:
+            type: string
+            format: uri
+          required: false
+        - name: user
+          description: 'View available personal, team, and organization event types associated with the user''s URI.'
+          in: query
+          schema:
+            type: string
+            format: uri
+          required: false
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: 'name:asc'
+          description: |-
+            Order results by the specified field and direction. Accepts comma-separated list of {field}:{direction} values.
+            Supported fields are: name.
+            Sort direction is specified as: asc, desc.
+          examples:
+            withOmittedDirection:
+              summary: Omit direction with fallback to asc by default
+              value: name
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventType'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - collection
+                  - pagination
+              examples:
+                Example:
+                  value:
+                    collection:
+                      - uri: 'https://api.calendly.com/event_types/AAAAAAAAAAAAAAAA'
+                        name: 15 Minute Meeting
+                        active: true
+                        booking_method: instant
+                        slug: acmesales
+                        scheduling_url: 'https://calendly.com/acmesales'
+                        duration: 30
+                        kind: solo
+                        pooling_type: round_robin
+                        type: StandardEventType
+                        kind_description: Round Robin
+                        color: '#fff200'
+                        created_at: '2019-01-02T03:04:05.678123Z'
+                        updated_at: '2019-08-07T06:05:04.321123Z'
+                        internal_note: Internal note
+                        description_plain: 15 Minute Meeting
+                        description_html: <p>15 Minute Meeting</p>
+                        profile:
+                          type: User
+                          name: Tamara Jones
+                          owner: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                        secret: true
+                        deleted_at: null
+                        admin_managed: false
+                        custom_questions:
+                          - name: Company Name
+                            type: string
+                            position: 0
+                            enabled: true
+                            required: true
+                            answer_choices: []
+                            include_other: false
+                          - name: What would you like to discuss?
+                            type: text
+                            position: 0
+                            enabled: true
+                            required: true
+                            answer_choices: []
+                            include_other: false
+                          - name: Number of employees
+                            answer_choices:
+                              - '1'
+                              - 2-10
+                              - 11-20
+                              - 20+
+                            enabled: true
+                            include_other: true
+                            position: 2
+                            required: false
+                            type: single_select
+                          - name: Multi-Select Question
+                            answer_choices:
+                              - Answer 1
+                              - Answer 2
+                              - Answer 3
+                              - Answer 4
+                            enabled: true
+                            include_other: true
+                            position: 2
+                            required: false
+                            type: multi_select
+                          - name: Phone Number
+                            type: phone_number
+                            position: 0
+                            enabled: true
+                            required: true
+                            answer_choices: []
+                            include_other: false
+                    pagination:
+                      count: 1
+                      next_page: 'https://api.calendly.com/event_types?count=1&page_token=sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi'
+                      previous_page: 'https://api.calendly.com/event_types?count=1&page_token=VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H'
+                      next_page_token: sNjq4TvMDfUHEl7zHRR0k0E1PCEJWvdi
+                      previous_page_token: VJs2rfDYeY8ahZpq0QI1O114LJkNjd7H
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Permission Denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - This user is not in your organization
+                      - You do not have permission
+                      - You do not have permission to access this resource.
+              examples:
+                Caller does not have access:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission to access this resource.
+                Caller's Role is not Admin/Owner:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission
+                Caller is not in organization:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: getEventTypes
+    parameters: []
