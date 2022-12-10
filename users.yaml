@@ -1,0 +1,76 @@
+openapi: 3.0.0
+servers:
+  - url: ''
+info:
+  description: |- 
+  version: 2.0.0
+  title: ''
+tags:
+  - name: Activity Log
+  - name: Availability
+  - name: Data Compliance
+  - name: Event Types
+  - name: Groups
+  - name: Organizations
+  - name: Routing Forms
+  - name: Scheduled Events
+  - name: Scheduling Links
+  - name: Shares
+  - name: Subscriptions
+  - name: Trials
+  - name: Users
+  - name: Webhooks
+  - name: Polls
+paths:
+  '/users/{uuid}':
+    get:
+      summary: Get user
+      tags:
+        - Users
+      security:
+        - oauth2: []
+        - personal_access_token: []
+      parameters:
+        - name: uuid
+          in: path
+          description: 'User unique identifier, or the constant "me" to reference the caller'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/User'
+                required:
+                  - resource
+              examples:
+                Example:
+                  value:
+                    resource:
+                      uri: 'https://api.calendly.com/users/AAAAAAAAAAAAAAAA'
+                      name: John Doe
+                      slug: acmesales
+                      email: test@example.com
+                      scheduling_url: 'https://calendly.com/acmesales'
+                      timezone: America/New York
+                      avatar_url: 'https://01234567890.cloudfront.net/uploads/user/avatar/0123456/a1b2c3d4.png'
+                      created_at: '2019-01-02T03:04:05.678123Z'
+                      updated_at: '2019-08-07T06:05:04.321123Z'
+                      current_organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns information about a specified User.
+      operationId: getUser
